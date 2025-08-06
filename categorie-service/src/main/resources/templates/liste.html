@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Liste des Catégories</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+<div class="container mt-4">
+    <h1 class="mb-4">Liste des Catégories</h1>
+
+    <div class="mb-3 d-flex">
+        <input type="text" id="searchInput" class="form-control" placeholder="Rechercher une catégorie..." style="width: 300px; margin-right: 10px;">
+    </div>
+
+    <a href="formulaire.html" class="btn btn-primary mb-3">Ajouter une catégorie</a>
+
+    <table class="table table-bordered table-striped">
+        <thead class="thead-dark">
+        <tr>
+            <th>Nom</th>
+            <th>Description</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody id="categoriesTableBody">
+        </tbody>
+    </table>
+</div>
+
+<script>
+    async function loadCategories() {
+        const response = await fetch('http://localhost:8010/api/categories');
+        const categories = await response.json();
+        const tbody = document.getElementById('categoriesTableBody');
+        tbody.innerHTML = '';
+        categories.forEach(cat => {
+            const row = `
+        <tr class="categoryRow">
+          <td class="categoryName">${cat.nom}</td>
+          <td>${cat.description}</td>
+          <td>
+            <a href="details.html?id=${cat.id}" class="btn btn-info btn-sm">Détails</a>
+            <a href="formulaire.html?id=${cat.id}" class="btn btn-warning btn-sm">Modifier</a>
+            <button onclick="deleteCategory(${cat.id})" class="btn btn-danger btn-sm">Supprimer</button>
+          </td>
+        </tr>`;
+            tbody.insertAdjacentHTML('beforeend', row);
+        });
+    }
+
+    async function deleteCategory(id) {
+        const confirm = await Swal.fire({
+            title: "Êtes-vous sûr ?",
+            text: "Cette action est irréversible !",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonText: "Oui, supprimer",
+            cancelButtonText: "Annuler"
+        });
+
+        if (confirm.isConfirmed) {
+            const res = await fetch(`http://localhost:8010/api/categories/${id}`, {
+                method: 'DELETE'
+            });
+            if (res.ok) {
+                Swal.fire("Supprimé", "Catégorie supprimée.", "success").then(loadCategories);
+            } else {
+                Swal.fire("Erreur", "La suppression a échoué.", "error");
+            }
+        }
+    }
+
+    document.getElementById("searchInput").addEventListener("input", function () {
+        let searchValue = this.value.toLowerCase();
+        let rows = document.querySelectorAll(".categoryRow");
+        rows.forEach(row => {
+            let categoryName = row.querySelector(".categoryName").textContent.toLowerCase();
+            row.style.display = categoryName.includes(searchValue) ? "" : "none";
+        });
+    });
+
+    loadCategories();
+</script>
+</body>
+</html>
